@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
 
 public class MainManager : MonoBehaviour
 {
@@ -11,6 +12,7 @@ public class MainManager : MonoBehaviour
     public Rigidbody Ball;
 
     public Text ScoreText;
+    public Text NameText;
     public GameObject GameOverText;
     
     private bool m_Started = false;
@@ -18,10 +20,25 @@ public class MainManager : MonoBehaviour
     
     private bool m_GameOver = false;
 
-    
+        public string name;
+        public int score;  
+        public Text highscoreText;
+    public GameManagerScript gameManagerScript;
+
+    [System.Serializable]
+    class SaveData
+    {
+        public string name;
+        public int score;  
+    }
+
     // Start is called before the first frame update
     void Start()
     {
+        LoadScore();
+        gameManagerScript = GameObject.Find("GameManager").GetComponent<GameManagerScript>();
+        NameText.text = "Name: " + gameManagerScript.getNaam();
+
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
         
@@ -72,5 +89,36 @@ public class MainManager : MonoBehaviour
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+        if(m_Points > score){
+            SaveScore(m_Points, gameManagerScript.getNaam());
+        }
+    }
+
+    public void SaveScore(int highscore, string naam)
+    {
+        SaveData data = new SaveData();
+        data.score = highscore;
+        data.name = naam;
+
+        string json = JsonUtility.ToJson(data);
+    
+        File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+    }
+
+    public void LoadScore()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+            score = data.score;
+            name = data.name;
+            highscoreText.text = "Best score: " + score + " Name: " + name;
+        }
+        else{
+            Debug.Log("No save file exists...");
+        }
     }
 }
